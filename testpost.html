@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Gemini Predict</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h2>Test /api/gemini-predict</h2>
+  <input type="file" id="img" accept="image/*" /><br/><br/>
+  <input type="text" id="prompt" placeholder="Prompt text" style="width: 100%;" /><br/><br/>
+  <button id="send">Send</button>
+  <h3>Response</h3>
+  <pre id="out">Waiting for request...</pre>
+
+  <script>
+    const API = " https://4187c6b1a3cd.ngrok-free.app/api/gemini-predict";
+    document.getElementById("send").onclick = async () => {
+      const fileInput = document.getElementById("img");
+      const promptInput = document.getElementById("prompt");
+      const out = document.getElementById("out");
+
+      if (!fileInput.files.length) {
+        out.textContent = "Please select an image file first.";
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const prompt = promptInput.value || "Return ONLY JSON with keys: class_label, detected_object, disposal_instruction, sorting_instruction.";
+
+      const form = new FormData();
+      form.append("image", file);
+      form.append("prompt", prompt);
+
+      out.textContent = "Sending request…";
+      try {
+        const response = await fetch(API, {
+          method: "POST",
+          body: form
+        });
+
+        const text = await response.text();
+        if (!response.ok) {
+          out.textContent = `HTTP ${response.status}\n${text}`;
+        } else {
+          try {
+            const json = JSON.parse(text);
+            out.textContent = JSON.stringify(json, null, 2);
+          } catch (e) {
+            out.textContent = text;
+          }
+        }
+      } catch (err) {
+        out.textContent = "Fetch/network error: " + err;
+      }
+    };
+  </script>
+</body>
+</html>
